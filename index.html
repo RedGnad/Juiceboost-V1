@@ -8,7 +8,7 @@
 </head>
 <body>
   <div id="unity-container" class="unity-desktop">
-    <canvas id="unity-canvas" width="1000" height="450"></canvas>
+    <canvas id="unity-canvas" width="960" height="600"></canvas>
     <div id="unity-loading-bar">
       <div id="unity-progress-bar-full"></div>
     </div>
@@ -62,23 +62,8 @@
     script.onload = () => {
       createUnityInstance(canvas, config, p => {
         document.querySelector("#unity-progress-bar-full").style.width = 100 * p + "%";
-      }).then((unityInstance) => {
+      }).then(() => {
         document.querySelector("#unity-loading-bar").style.display = "none";
-        
-        // Force la taille du canvas après le chargement Unity
-        setTimeout(() => {
-          const container = document.querySelector("#unity-container");
-          const canvas = document.querySelector("#unity-canvas");
-          
-          container.style.width = "1000px";
-          container.style.height = "450px";
-          canvas.style.width = "1000px";
-          canvas.style.height = "450px";
-          canvas.width = 1000;
-          canvas.height = 450;
-          
-          console.log("Taille forcée à 1000x450");
-        }, 100);
       }).catch(alert);
     };
     document.body.appendChild(script);
