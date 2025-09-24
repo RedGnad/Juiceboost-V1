@@ -104,12 +104,12 @@ body {
 }
 
 /* =========================
-   Override pour fenêtre plus grande 1200×675
+   Override pour fenêtre fixe 800×360
    ========================= */
 #unity-container.unity-desktop {
   position: absolute !important;
-  width:  1400px   !important;
-  height: 575px    !important;
+  width:  800px    !important;
+  height: 360px    !important;
   top:    50%      !important;
   left:   50%      !important;
   transform: translate(-50%, -50%) !important;
