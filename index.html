@@ -8,7 +8,7 @@
 </head>
 <body>
   <div id="unity-container" class="unity-desktop">
-    <canvas id="unity-canvas" width="1280" height="720"></canvas>
+    <canvas id="unity-canvas" width="1200" height="675"></canvas>
     <div id="unity-loading-bar">
       <div id="unity-progress-bar-full"></div>
     </div>
@@ -47,7 +47,7 @@
     const buildUrl = "Build";
     const loaderUrl = `${buildUrl}/05341b76d4a90f70e910dd0a415d4c33.loader.js`;
     const config = {
-      dataUrl: buildUrl + "/b182eb0c6dd6a4d13ab9ba9a0a8a0864.data",
+      dataUrl: buildUrl + "/794f39341fd79c4f07705ec36033d6a1.data",
       frameworkUrl: buildUrl + "/8fe992f7e32ac110b1a81e561f501d4f.framework.js",
       codeUrl: buildUrl + "/3a6dfbf59d1315364bd095cb137d2e4e.wasm",
       streamingAssetsUrl: "StreamingAssets",
@@ -62,8 +62,23 @@
     script.onload = () => {
       createUnityInstance(canvas, config, p => {
         document.querySelector("#unity-progress-bar-full").style.width = 100 * p + "%";
-      }).then(() => {
+      }).then((unityInstance) => {
         document.querySelector("#unity-loading-bar").style.display = "none";
+        
+        // Force la taille du canvas après le chargement Unity
+        setTimeout(() => {
+          const container = document.querySelector("#unity-container");
+          const canvas = document.querySelector("#unity-canvas");
+          
+          container.style.width = "1200px";
+          container.style.height = "675px";
+          canvas.style.width = "1200px";
+          canvas.style.height = "675px";
+          canvas.width = 1200;
+          canvas.height = 675;
+          
+          console.log("Taille forcée à 1200x675");
+        }, 100);
       }).catch(alert);
     };
     document.body.appendChild(script);
