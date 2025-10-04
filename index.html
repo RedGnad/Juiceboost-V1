@@ -62,8 +62,18 @@
     script.onload = () => {
       createUnityInstance(canvas, config, p => {
         document.querySelector("#unity-progress-bar-full").style.width = 100 * p + "%";
-      }).then(() => {
+      }).then((unityInstance) => {
         document.querySelector("#unity-loading-bar").style.display = "none";
+        
+        // Force la taille du canvas après le chargement
+        setTimeout(() => {
+          canvas.width = 1200;
+          canvas.height = 750;
+          canvas.style.width = "1200px";
+          canvas.style.height = "750px";
+          console.log("Canvas size forced to 1200x750");
+        }, 1000);
+        
       }).catch(alert);
     };
     document.body.appendChild(script);

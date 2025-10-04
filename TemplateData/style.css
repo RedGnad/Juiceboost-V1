@@ -117,6 +117,10 @@ body {
 }
 
 #unity-canvas {
-  width:  100% !important;
-  height: 100% !important;
+  width:  1200px !important;
+  height: 750px !important;
+  max-width: 1200px !important;
+  max-height: 750px !important;
+  min-width: 1200px !important;
+  min-height: 750px !important;
 }
