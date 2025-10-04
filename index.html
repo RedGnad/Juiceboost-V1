@@ -67,32 +67,38 @@
 
     // Globales attendues par Unity (extern)
     window.JS_StartRun = function(objectName, callback, errCallback) {
+      console.log('🎯 [JS_StartRun] CALLED from Unity', { objectName, callback, errCallback });
       _safe(async () => {
         const data = await _callCallable('startRun', {});
+        console.log('✅ [JS_StartRun] Success:', data);
         if (typeof SendMessage === 'function') SendMessage(objectName, callback, JSON.stringify(data));
       });
     };
 
     window.JS_SubmitRun = function(runId, runToken, finalScore, coins, clientElapsedMs, gameVersion, objectName, callback, errCallback) {
+      console.log('🎯 [JS_SubmitRun] CALLED from Unity', { runId, runToken, finalScore, coins, clientElapsedMs, gameVersion, objectName, callback, errCallback });
       _safe(async () => {
         const payload = { runId, runToken, finalScore: Number(finalScore), coins: Number(coins), clientElapsedMs: Number(clientElapsedMs), gameVersion };
         try {
           const data = await _callCallable('submitRun', payload);
+          console.log('✅ [JS_SubmitRun] Success:', data);
           if (typeof SendMessage === 'function') SendMessage(objectName, callback, JSON.stringify(data));
         } catch (e) {
-          console.error('[JS_SubmitRun] error', e);
+          console.error('❌ [JS_SubmitRun] error', e);
           if (typeof SendMessage === 'function') SendMessage(objectName, errCallback, (e.message||'error'));
         }
       });
     };
 
     window.JS_VerifyWallet = function(wallet, message, signature, gameVersion, objectName, callback, errCallback) {
+      console.log('🎯 [JS_VerifyWallet] CALLED from Unity', { wallet, message, signature, gameVersion, objectName, callback, errCallback });
       _safe(async () => {
         try {
           const data = await _callCallable('verifyWallet', { walletAddress: wallet, message, signature });
+          console.log('✅ [JS_VerifyWallet] Success:', data);
           if (typeof SendMessage === 'function') SendMessage(objectName, callback, JSON.stringify(data));
         } catch (e) {
-          console.error('[JS_VerifyWallet] error', e);
+          console.error('❌ [JS_VerifyWallet] error', e);
           if (typeof SendMessage === 'function') SendMessage(objectName, errCallback, (e.message||'error'));
         }
       });
@@ -103,6 +109,16 @@
   <script>
     function startUnityWhenReady() {
       console.log("🎮 Starting Unity now that Firebase is ready");
+      
+      // ✅ Vérification que les bridge functions sont bien exposées
+      console.log('🔧 Bridge functions check:', {
+        JS_VerifyWallet: typeof window.JS_VerifyWallet,
+        JS_StartRun: typeof window.JS_StartRun,
+        JS_SubmitRun: typeof window.JS_SubmitRun,
+        functions: typeof window.functions,
+        SendMessage: typeof SendMessage
+      });
+      
       const canvas = document.querySelector("#unity-canvas");
       const buildUrl = "Build";
       const loaderUrl = `${buildUrl}/de20f721ec32512e2d3005562533ab04.loader.js`;
