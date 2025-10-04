@@ -104,12 +104,12 @@ body {
 }
 
 /* =========================
-   Override pour fenêtre fixe 1200×750
+   Override pour fenêtre fixe 800×360
    ========================= */
 #unity-container.unity-desktop {
   position: absolute !important;
-  width:  1200px   !important;
-  height: 750px    !important;
+  width:  800px    !important;
+  height: 360px    !important;
   top:    50%      !important;
   left:   50%      !important;
   transform: translate(-50%, -50%) !important;
@@ -117,10 +117,6 @@ body {
 }
 
 #unity-canvas {
-  width:  1200px !important;
-  height: 750px !important;
-  max-width: 1200px !important;
-  max-height: 750px !important;
-  min-width: 1200px !important;
-  min-height: 750px !important;
+  width:  100% !important;
+  height: 100% !important;
 }
