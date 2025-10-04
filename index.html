@@ -21,6 +21,8 @@
   <script src="https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.8.1/firebase-functions-compat.js"></script>
   <script>
+    console.log("🚀 [INIT] Starting Firebase initialization");
+    
     // 🔧 Votre configuration Firebase
     const cfg = {
       apiKey: "AIzaSyAQlCQelLsHOHqarUeyp78nnrrlC3pSv2M",
@@ -30,16 +32,30 @@
       messagingSenderId: "478090950352",
       appId: "1:478090950352:web:aa40a374631d6de04f10d5"
     };
+    
+    console.log("🔧 [INIT] Firebase config loaded");
     firebase.initializeApp(cfg);
+    console.log("🔧 [INIT] Firebase app initialized");
 
     // 👤 Connexion anonyme + signal Firebase ready
     window.firebaseReady = false;
+    console.log("🔐 [AUTH] Starting anonymous authentication");
+    
     firebase.auth().signInAnonymously()
       .then(({ user }) => {
         console.log("✔ Auth OK, UID:", user.uid);
         // Expose la DB uniquement **après** auth
         window.db = firebase.firestore();
+        console.log("📊 [FIRESTORE] Firestore initialized");
+        
         window.functions = firebase.app().functions('us-central1');
+        console.log("⚡ [FUNCTIONS] Functions initialized for us-central1");
+        
+        // Vérification que les bridge functions existent
+        console.log("🔍 [BRIDGE] Checking bridge functions existence:");
+        console.log("  - JS_VerifyWallet:", typeof window.JS_VerifyWallet);
+        console.log("  - JS_StartRun:", typeof window.JS_StartRun);
+        console.log("  - JS_SubmitRun:", typeof window.JS_SubmitRun);
         
         // 🚀 SIGNAL QUE FIREBASE EST PRÊT - Unity peut maintenant démarrer
         window.firebaseReady = true;
@@ -67,32 +83,53 @@
 
     // Globales attendues par Unity (extern)
     window.JS_StartRun = function(objectName, callback, errCallback) {
+      console.log('🎯 [JS_StartRun] CALLED from Unity', { objectName, callback, errCallback });
+      if (!window.functions) {
+        console.error('❌ [JS_StartRun] Functions not ready! Firebase may not be initialized.');
+        if (typeof SendMessage === 'function') SendMessage(objectName, errCallback, 'Functions not ready');
+        return;
+      }
       _safe(async () => {
         const data = await _callCallable('startRun', {});
+        console.log('✅ [JS_StartRun] Success:', data);
         if (typeof SendMessage === 'function') SendMessage(objectName, callback, JSON.stringify(data));
       });
     };
 
     window.JS_SubmitRun = function(runId, runToken, finalScore, coins, clientElapsedMs, gameVersion, objectName, callback, errCallback) {
+      console.log('🎯 [JS_SubmitRun] CALLED from Unity', { runId, runToken, finalScore, coins, clientElapsedMs, gameVersion, objectName, callback, errCallback });
+      if (!window.functions) {
+        console.error('❌ [JS_SubmitRun] Functions not ready! Firebase may not be initialized.');
+        if (typeof SendMessage === 'function') SendMessage(objectName, errCallback, 'Functions not ready');
+        return;
+      }
       _safe(async () => {
         const payload = { runId, runToken, finalScore: Number(finalScore), coins: Number(coins), clientElapsedMs: Number(clientElapsedMs), gameVersion };
         try {
           const data = await _callCallable('submitRun', payload);
+          console.log('✅ [JS_SubmitRun] Success:', data);
           if (typeof SendMessage === 'function') SendMessage(objectName, callback, JSON.stringify(data));
         } catch (e) {
-          console.error('[JS_SubmitRun] error', e);
+          console.error('❌ [JS_SubmitRun] error', e);
           if (typeof SendMessage === 'function') SendMessage(objectName, errCallback, (e.message||'error'));
         }
       });
     };
 
     window.JS_VerifyWallet = function(wallet, message, signature, gameVersion, objectName, callback, errCallback) {
+      console.log('🎯 [JS_VerifyWallet] CALLED from Unity', { wallet, message, signature, gameVersion, objectName, callback, errCallback });
+      if (!window.functions) {
+        console.error('❌ [JS_VerifyWallet] Functions not ready! Firebase may not be initialized.');
+        if (typeof SendMessage === 'function') SendMessage(objectName, errCallback, 'Functions not ready');
+        return;
+      }
       _safe(async () => {
         try {
           const data = await _callCallable('verifyWallet', { walletAddress: wallet, message, signature });
+          console.log('✅ [JS_VerifyWallet] Success:', data);
           if (typeof SendMessage === 'function') SendMessage(objectName, callback, JSON.stringify(data));
         } catch (e) {
-          console.error('[JS_VerifyWallet] error', e);
+          console.error('❌ [JS_VerifyWallet] error', e);
           if (typeof SendMessage === 'function') SendMessage(objectName, errCallback, (e.message||'error'));
         }
       });
@@ -103,7 +140,13 @@
     <!-- 2) Unity WebGL loader - RETARDÉ JUSQU'À CE QUE FIREBASE SOIT PRÊT -->
   <script>
     function startUnityWhenReady() {
-      console.log("🎮 Starting Unity now that Firebase is ready");
+      console.log("🎮 [UNITY] Starting Unity now that Firebase is ready");
+      console.log("🔍 [UNITY] Current bridge functions state:");
+      console.log("  - JS_VerifyWallet exists:", typeof window.JS_VerifyWallet === 'function');
+      console.log("  - JS_StartRun exists:", typeof window.JS_StartRun === 'function');
+      console.log("  - JS_SubmitRun exists:", typeof window.JS_SubmitRun === 'function');
+      console.log("  - Firebase functions ready:", !!window.functions);
+      
       const canvas = document.querySelector("#unity-canvas");
       const buildUrl = "Build";
       const loaderUrl = `${buildUrl}/de20f721ec32512e2d3005562533ab04.loader.js`;
@@ -130,9 +173,15 @@
       document.body.appendChild(script);
     }
     
+    console.log("🕐 [STARTUP] Checking if Firebase is already ready...");
+    console.log("🕐 [STARTUP] window.firebaseReady =", window.firebaseReady);
+    
     // Ne démarre Unity que si Firebase est déjà prêt, sinon attend
     if (window.firebaseReady) {
+      console.log("✅ [STARTUP] Firebase already ready, starting Unity immediately");
       startUnityWhenReady();
+    } else {
+      console.log("⏳ [STARTUP] Firebase not ready yet, waiting for Firebase auth completion");
     }
   </script>
 </body>
