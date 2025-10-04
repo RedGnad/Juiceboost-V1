@@ -19,6 +19,7 @@
   <script src="https://www.gstatic.com/firebasejs/11.8.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.8.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.8.1/firebase-functions-compat.js"></script>
   <script>
     // 🔧 Votre configuration Firebase
     const cfg = {
@@ -31,42 +32,107 @@
     };
     firebase.initializeApp(cfg);
 
-    // 👤 Connexion anonyme
+    // 👤 Connexion anonyme + signal Firebase ready
+    window.firebaseReady = false;
     firebase.auth().signInAnonymously()
       .then(({ user }) => {
         console.log("✔ Auth OK, UID:", user.uid);
         // Expose la DB uniquement **après** auth
         window.db = firebase.firestore();
+        window.functions = firebase.app().functions('us-central1');
+        
+        // 🚀 SIGNAL QUE FIREBASE EST PRÊT - Unity peut maintenant démarrer
+        window.firebaseReady = true;
+        console.log("🔥 Firebase fully ready, Unity can start");
+        
+        // Lancer Unity maintenant que Firebase est prêt
+        startUnityWhenReady();
       })
       .catch(e => console.error("❌ Auth failed:", e));
   </script>
 
-  <!-- 2) Unity WebGL loader -->
+  <!-- 1b) Bridge Cloud Functions pour Unity WebGL (DllImport "__Internal") -->
   <script>
-    const canvas = document.querySelector("#unity-canvas");
-    const buildUrl = "Build";
-    const loaderUrl = `${buildUrl}/de20f721ec32512e2d3005562533ab04.loader.js`;
-    const config = {
-      dataUrl: buildUrl + "/43aaa14c0654b377b8534a9670d70b60.data",
-      frameworkUrl: buildUrl + "/6d61cbe97d25a594bff16c80c37b0bf1.framework.js",
-      codeUrl: buildUrl + "/c98bce852d142c911eb968fb9c7edbb6.wasm",
-      streamingAssetsUrl: "StreamingAssets",
-      companyName: "YourCompany",
-      productName: "JuiceBoost",
-      productVersion: "1.0",
-      showBanner: ()=>{}  // ou votre fonction d’affichage
+    // Helpers conversion depuis WebGL String pointers si besoin (Unity gère déjà strings ici)
+    function _safe(fn) { try { return fn(); } catch (e) { console.error(e); } }
+
+    async function _callCallable(name, payload) {
+      if (!window.functions) {
+        console.warn('[Bridge] functions pas prêtes, tentative d\'initialisation tardive');
+        window.functions = firebase.app().functions('us-central1');
+      }
+      const callable = window.functions.httpsCallable(name);
+      return callable(payload).then(r => r.data);
+    }
+
+    // Globales attendues par Unity (extern)
+    window.JS_StartRun = function(objectName, callback, errCallback) {
+      _safe(async () => {
+        const data = await _callCallable('startRun', {});
+        if (typeof SendMessage === 'function') SendMessage(objectName, callback, JSON.stringify(data));
+      });
     };
-    document.querySelector("#unity-loading-bar").style.display = "block";
-    const script = document.createElement("script");
-    script.src = loaderUrl;
-    script.onload = () => {
-      createUnityInstance(canvas, config, p => {
-        document.querySelector("#unity-progress-bar-full").style.width = 100 * p + "%";
-      }).then(() => {
-        document.querySelector("#unity-loading-bar").style.display = "none";
-      }).catch(alert);
+
+    window.JS_SubmitRun = function(runId, runToken, finalScore, coins, clientElapsedMs, gameVersion, objectName, callback, errCallback) {
+      _safe(async () => {
+        const payload = { runId, runToken, finalScore: Number(finalScore), coins: Number(coins), clientElapsedMs: Number(clientElapsedMs), gameVersion };
+        try {
+          const data = await _callCallable('submitRun', payload);
+          if (typeof SendMessage === 'function') SendMessage(objectName, callback, JSON.stringify(data));
+        } catch (e) {
+          console.error('[JS_SubmitRun] error', e);
+          if (typeof SendMessage === 'function') SendMessage(objectName, errCallback, (e.message||'error'));
+        }
+      });
     };
-    document.body.appendChild(script);
+
+    window.JS_VerifyWallet = function(wallet, message, signature, gameVersion, objectName, callback, errCallback) {
+      _safe(async () => {
+        try {
+          const data = await _callCallable('verifyWallet', { walletAddress: wallet, message, signature });
+          if (typeof SendMessage === 'function') SendMessage(objectName, callback, JSON.stringify(data));
+        } catch (e) {
+          console.error('[JS_VerifyWallet] error', e);
+          if (typeof SendMessage === 'function') SendMessage(objectName, errCallback, (e.message||'error'));
+        }
+      });
+    };
+  </script>
+
+  <!-- 2) Unity WebGL loader - RETARDÉ JUSQU'À CE QUE FIREBASE SOIT PRÊT -->
+  <script>
+    function startUnityWhenReady() {
+      console.log("🎮 Starting Unity now that Firebase is ready");
+      const canvas = document.querySelector("#unity-canvas");
+      const buildUrl = "Build";
+      const loaderUrl = `${buildUrl}/de20f721ec32512e2d3005562533ab04.loader.js`;
+      const config = {
+        dataUrl: buildUrl + "/43aaa14c0654b377b8534a9670d70b60.data",
+        frameworkUrl: buildUrl + "/6d61cbe97d25a594bff16c80c37b0bf1.framework.js",
+        codeUrl: buildUrl + "/c98bce852d142c911eb968fb9c7edbb6.wasm",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "YourCompany",
+        productName: "JuiceBoost",
+        productVersion: "1.0",
+        showBanner: ()=>{}  // ou votre fonction d'affichage
+      };
+      document.querySelector("#unity-loading-bar").style.display = "block";
+      const script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, p => {
+          document.querySelector("#unity-progress-bar-full").style.width = 100 * p + "%";
+        }).then(() => {
+          document.querySelector("#unity-loading-bar").style.display = "none";
+        }).catch(alert);
+      };
+      document.body.appendChild(script);
+    }
+    
+    // Ne démarre Unity que si Firebase est déjà prêt, sinon attend
+    if (window.firebaseReady) {
+      startUnityWhenReady();
+    }
   </script>
 </body>
 </html>
