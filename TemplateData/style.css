@@ -104,7 +104,7 @@ body {
 }
 
 /* =========================
-   Override pour fenêtre fixe 1100×550 - ULTRA AGRESSIF
+   Override pour fenêtre fixe 1100×550
    ========================= */
 #unity-container.unity-desktop {
   position: absolute !important;
@@ -114,33 +114,9 @@ body {
   left:   50%      !important;
   transform: translate(-50%, -50%) !important;
   overflow: hidden !important;
-  max-width: 1100px !important;
-  max-height: 550px !important;
-  min-width: 1100px !important;
-  min-height: 550px !important;
 }
 
 #unity-canvas {
-  width:  1100px !important;
-  height: 550px !important;
-  max-width: 1100px !important;
-  max-height: 550px !important;
-  min-width: 1100px !important;
-  min-height: 550px !important;
-  display: block !important;
-  object-fit: contain !important;
-}
-
-/* Force sur TOUS les éléments canvas au cas où */
-canvas {
-  width: 1100px !important;
-  height: 550px !important;
-  max-width: 1100px !important;
-  max-height: 550px !important;
-}
-
-/* Empêche Unity de redimensionner */
-#unity-container *, #unity-container canvas, canvas[data-pixel-width] {
-  width: 1100px !important;
-  height: 550px !important;
+  width:  100% !important;
+  height: 100% !important;
 }
