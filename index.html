@@ -13,6 +13,14 @@
       <div id="unity-progress-bar-full"></div>
     </div>
     <div id="unity-warning"></div>
+    
+    <!-- DIAGNOSTIC: Test direct JavaScript sans Unity -->
+    <div style="position: absolute; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px;">
+      <button id="testStartRun" onclick="testDirectStartRun()" style="background: #4CAF50; color: white; border: none; padding: 10px; border-radius: 3px; cursor: pointer;">
+        🧪 Test StartRun Direct
+      </button>
+      <div id="testResult" style="margin-top: 10px; font-size: 12px; max-width: 300px;"></div>
+    </div>
   </div>
 
   <!-- 1) Firebase Compat (avant Unity) -->
@@ -77,7 +85,9 @@
         console.warn('[Bridge] functions pas prêtes, tentative d\'initialisation tardive');
         window.functions = firebase.app().functions('us-central1');
       }
-      const callable = window.functions.httpsCallable(name);
+      const callable = window.functions.httpsCallable(name, {
+        timeout: 10000  // 10 secondes timeout au lieu du défaut (probablement 5s)
+      });
       return callable(payload).then(r => r.data);
     }
 
@@ -108,15 +118,31 @@
           }
           
           console.log('🚀 [JS_StartRun] Calling startRun cloud function...');
+          console.time('⏱️ [JS_StartRun] Cloud function duration');
+          
           const data = await _callCallable('startRun', {});
+          
+          console.timeEnd('⏱️ [JS_StartRun] Cloud function duration');
           console.log('✅ [JS_StartRun] Success:', data);
           if (typeof SendMessage === 'function') SendMessage(objectName, callback, JSON.stringify(data));
         } catch (error) {
+          console.timeEnd('⏱️ [JS_StartRun] Cloud function duration');
           console.error('❌ [JS_StartRun] Cloud Function Error:', error);
           console.error('❌ [JS_StartRun] Error code:', error.code);
           console.error('❌ [JS_StartRun] Error message:', error.message);
           console.error('❌ [JS_StartRun] Error details:', error.details);
-          if (typeof SendMessage === 'function') SendMessage(objectName, errCallback, error.message || 'StartRun failed');
+          
+          // Message d'erreur plus informatif
+          let errorMsg = 'StartRun failed';
+          if (error.code === 'deadline-exceeded') {
+            errorMsg = 'StartRun timeout - Firebase functions too slow';
+          } else if (error.code === 'failed-precondition') {
+            errorMsg = 'Wallet verification not propagated yet - try again';
+          } else if (error.message) {
+            errorMsg = error.message;
+          }
+          
+          if (typeof SendMessage === 'function') SendMessage(objectName, errCallback, errorMsg);
         }
       });
     };
