@@ -59,8 +59,7 @@
   jbLog("[BRIDGE] JS_GetSessionToken:", typeof window.JS_GetSessionToken, "SubmitScore:", typeof window.SubmitScore);
         
         // 🚀 SIGNAL QUE FIREBASE EST PRÊT - Unity peut maintenant démarrer
-        window.firebaseReady = true;
-  console.log("[READY] Firebase ready");
+    window.firebaseReady = true; // READY (log supprimé pour silence)
         
         // Lancer Unity maintenant que Firebase est prêt
         startUnityWhenReady();
@@ -237,9 +236,9 @@
       const buildUrl = "Build";
       const loaderUrl = `${buildUrl}/de20f721ec32512e2d3005562533ab04.loader.js`;
       const config = {
-        dataUrl: buildUrl + "/fc99eeac8292692a9ac6b1f4563e395e.data",
-        frameworkUrl: buildUrl + "/edeb9d89d91eeb1b536aa9e19842349d.framework.js",
-        codeUrl: buildUrl + "/959f0a7d7ad5848fbcd364248f244d8c.wasm",
+        dataUrl: buildUrl + "/1b853f377bd56581c45d1574c606b660.data",
+        frameworkUrl: buildUrl + "/6d8833465a1823741b53f3a0e33d09f1.framework.js",
+        codeUrl: buildUrl + "/42c0c257072f9be0782e2021a65a0f11.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "YourCompany",
         productName: "JuiceBoost",
