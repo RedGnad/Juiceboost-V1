@@ -187,6 +187,53 @@
     };
   </script>
 
+  <!-- TEST DIAGNOSTIC -->
+  <script>
+    async function testDirectStartRun() {
+      const resultDiv = document.getElementById('testResult');
+      const button = document.getElementById('testStartRun');
+      
+      if (!resultDiv || !button) {
+        console.error('❌ [TEST] UI elements not found');
+        return;
+      }
+      
+      button.disabled = true;
+      button.textContent = '⏳ Testing...';
+      resultDiv.innerHTML = '🔍 Testing direct JavaScript call...';
+      
+      try {
+        console.log('🧪 [TEST] Direct JavaScript startRun test starting...');
+        console.time('🧪 [TEST] Direct call duration');
+        
+        if (!window.functions) {
+          throw new Error('Firebase functions not initialized');
+        }
+        
+        const callable = window.functions.httpsCallable('startRun', { timeout: 10000 });
+        const result = await callable({});
+        
+        console.timeEnd('🧪 [TEST] Direct call duration');
+        console.log('🧪 [TEST] Direct call SUCCESS:', result.data);
+        
+        resultDiv.innerHTML = `✅ SUCCESS!<br>runId: ${result.data.runId}<br>runToken exists: ${!!result.data.runToken}`;
+        button.textContent = '✅ Success!';
+        
+      } catch (error) {
+        console.timeEnd('🧪 [TEST] Direct call duration');
+        console.error('🧪 [TEST] Direct call ERROR:', error);
+        
+        resultDiv.innerHTML = `❌ ERROR:<br>${error.code || 'unknown'}<br>${error.message || 'No message'}`;
+        button.textContent = '❌ Failed';
+      }
+      
+      setTimeout(() => {
+        button.disabled = false;
+        button.textContent = '🧪 Test StartRun Direct';
+      }, 3000);
+    }
+  </script>
+
   <!-- 2) Unity WebGL loader -->
     <!-- 2) Unity WebGL loader - RETARDÉ JUSQU'À CE QUE FIREBASE SOIT PRÊT -->
   <script>
