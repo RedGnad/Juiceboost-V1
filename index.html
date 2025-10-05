@@ -72,6 +72,15 @@
     // Helpers conversion depuis WebGL String pointers si besoin (Unity gère déjà strings ici)
     function _safe(fn) { try { return fn(); } catch (e) { console.error(e); } }
 
+/*************  ✨ Windsurf Command ⭐  *************/
+    /**
+     * Call a Cloud Function from Unity WebGL.
+     * @param {string} name - Name of the Cloud Function.
+     * @param {object} payload - Payload to pass to the Cloud Function.
+     * @returns {Promise<object>} - Promise resolving to the result of the Cloud Function.
+     * @throws {Error} - If the Cloud Function does not exist or if there is an error calling it.
+     */
+/*******  bd6be45f-d5b3-4402-9dfa-189580957ef1  *******/
     async function _callCallable(name, payload) {
       if (!window.functions) {
         console.warn('[Bridge] functions pas prêtes, tentative d\'initialisation tardive');
