@@ -89,20 +89,24 @@
       const currentUser = firebase.auth().currentUser;
       console.log('🔍 [JS_StartRun] Current user:', currentUser ? currentUser.uid : 'null');
       
-      if (currentUser) {
-        currentUser.getIdTokenResult().then(idTokenResult => {
-          console.log('🔍 [JS_StartRun] Custom claims:', idTokenResult.claims);
-          console.log('🔍 [JS_StartRun] walletAddress claim:', idTokenResult.claims.walletAddress);
-        }).catch(e => console.warn('⚠ [JS_StartRun] Could not get token result:', e));
-      }
-      
       if (!window.functions) {
         console.error('❌ [JS_StartRun] Functions not ready! Firebase may not be initialized.');
         if (typeof SendMessage === 'function') SendMessage(objectName, errCallback, 'Functions not ready');
         return;
       }
+      
       _safe(async () => {
         try {
+          if (currentUser) {
+            // FORCER le refresh du token pour obtenir les custom claims à jour
+            console.log('� [JS_StartRun] Forcing token refresh to get updated custom claims...');
+            await currentUser.getIdToken(true); // true = force refresh
+            
+            const idTokenResult = await currentUser.getIdTokenResult();
+            console.log('🔍 [JS_StartRun] Custom claims after refresh:', idTokenResult.claims);
+            console.log('🔍 [JS_StartRun] walletAddress claim after refresh:', idTokenResult.claims.walletAddress);
+          }
+          
           console.log('🚀 [JS_StartRun] Calling startRun cloud function...');
           const data = await _callCallable('startRun', {});
           console.log('✅ [JS_StartRun] Success:', data);
@@ -172,9 +176,9 @@
       const buildUrl = "Build";
       const loaderUrl = `${buildUrl}/de20f721ec32512e2d3005562533ab04.loader.js`;
       const config = {
-        dataUrl: buildUrl + "/28c1c6e6606029bb373332940899e99a.data",
-        frameworkUrl: buildUrl + "/65120a563dac193d220fb5fb55b97191.framework.js",
-        codeUrl: buildUrl + "/da5918165dc75a427a869fec49e6ddbb.wasm",
+        dataUrl: buildUrl + "/c8ddd5afa2222631cb67d50e4584156e.data",
+        frameworkUrl: buildUrl + "/f984c0509736c5a9fa47e9cb2c646e0a.framework.js",
+        codeUrl: buildUrl + "/7d3c59bdb43bd3a727f278d7465a3362.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "YourCompany",
         productName: "JuiceBoost",
