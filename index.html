@@ -16,10 +16,9 @@
     
     <!-- DIAGNOSTIC: Test direct JavaScript sans Unity -->
     <div style="position: absolute; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px;">
-      <button id="testStartRun" onclick="testDirectStartRun()" style="background: #4CAF50; color: white; border: none; padding: 10px; border-radius: 3px; cursor: pointer;">
-        🧪 Test StartRun Direct
+      <button onclick="window.functions.httpsCallable('startRun')({}).then(r => alert('SUCCESS: ' + JSON.stringify(r.data))).catch(e => alert('ERROR: ' + e.message))" style="background: #4CAF50; color: white; border: none; padding: 10px; border-radius: 3px; cursor: pointer;">
+        🧪 Test Direct
       </button>
-      <div id="testResult" style="margin-top: 10px; font-size: 12px; max-width: 300px;"></div>
     </div>
   </div>
 
@@ -187,53 +186,6 @@
     };
   </script>
 
-  <!-- TEST DIAGNOSTIC -->
-  <script>
-    async function testDirectStartRun() {
-      const resultDiv = document.getElementById('testResult');
-      const button = document.getElementById('testStartRun');
-      
-      if (!resultDiv || !button) {
-        console.error('❌ [TEST] UI elements not found');
-        return;
-      }
-      
-      button.disabled = true;
-      button.textContent = '⏳ Testing...';
-      resultDiv.innerHTML = '🔍 Testing direct JavaScript call...';
-      
-      try {
-        console.log('🧪 [TEST] Direct JavaScript startRun test starting...');
-        console.time('🧪 [TEST] Direct call duration');
-        
-        if (!window.functions) {
-          throw new Error('Firebase functions not initialized');
-        }
-        
-        const callable = window.functions.httpsCallable('startRun', { timeout: 10000 });
-        const result = await callable({});
-        
-        console.timeEnd('🧪 [TEST] Direct call duration');
-        console.log('🧪 [TEST] Direct call SUCCESS:', result.data);
-        
-        resultDiv.innerHTML = `✅ SUCCESS!<br>runId: ${result.data.runId}<br>runToken exists: ${!!result.data.runToken}`;
-        button.textContent = '✅ Success!';
-        
-      } catch (error) {
-        console.timeEnd('🧪 [TEST] Direct call duration');
-        console.error('🧪 [TEST] Direct call ERROR:', error);
-        
-        resultDiv.innerHTML = `❌ ERROR:<br>${error.code || 'unknown'}<br>${error.message || 'No message'}`;
-        button.textContent = '❌ Failed';
-      }
-      
-      setTimeout(() => {
-        button.disabled = false;
-        button.textContent = '🧪 Test StartRun Direct';
-      }, 3000);
-    }
-  </script>
-
   <!-- 2) Unity WebGL loader -->
     <!-- 2) Unity WebGL loader - RETARDÉ JUSQU'À CE QUE FIREBASE SOIT PRÊT -->
   <script>
@@ -280,44 +232,6 @@
       startUnityWhenReady();
     } else {
       console.log("⏳ [STARTUP] Firebase not ready yet, waiting for Firebase auth completion");
-    }
-  </script>
-
-  <!-- TEST DIAGNOSTIC -->
-  <script>
-    async function testDirectStartRun() {
-      const resultDiv = document.getElementById('testResult');
-      const button = document.getElementById('testStartRun');
-      
-      button.disabled = true;
-      button.textContent = '⏳ Testing...';
-      resultDiv.innerHTML = '🔍 Testing direct JavaScript call...';
-      
-      try {
-        console.log('🧪 [TEST] Direct JavaScript startRun test starting...');
-        console.time('🧪 [TEST] Direct call duration');
-        
-        const callable = window.functions.httpsCallable('startRun', { timeout: 10000 });
-        const result = await callable({});
-        
-        console.timeEnd('🧪 [TEST] Direct call duration');
-        console.log('🧪 [TEST] Direct call SUCCESS:', result.data);
-        
-        resultDiv.innerHTML = `✅ SUCCESS!<br>runId: ${result.data.runId}<br>runToken exists: ${!!result.data.runToken}`;
-        button.textContent = '✅ Success!';
-        
-      } catch (error) {
-        console.timeEnd('🧪 [TEST] Direct call duration');
-        console.error('🧪 [TEST] Direct call ERROR:', error);
-        
-        resultDiv.innerHTML = `❌ ERROR:<br>${error.code || 'unknown'}<br>${error.message || 'No message'}`;
-        button.textContent = '❌ Failed';
-      }
-      
-      setTimeout(() => {
-        button.disabled = false;
-        button.textContent = '🧪 Test StartRun Direct';
-      }, 3000);
     }
   </script>
 </body>
