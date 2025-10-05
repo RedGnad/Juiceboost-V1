@@ -20,19 +20,13 @@
         🧪 Test 1: JS Works?
       </button>
       <button onclick="
-        // D'abord VerifyWallet pour ajouter custom claims
-        window.functions.httpsCallable('verifyWallet')({
-          walletAddress: '0xD20CC1610BB0D0CF0daacb159AB6Cc4787D9e6D4',
-          message: 'Test message',
-          signature: '0x000000000000000000000000000000000000000000000000000000000000000000'
-        }).then(r => {
-          alert('VerifyWallet OK, now testing StartRun...');
-          // PUIS StartRun
-          return window.functions.httpsCallable('startRun')({});
+        // Test avec walletAddress direct - plus besoin de VerifyWallet!
+        window.functions.httpsCallable('startRun')({
+          walletAddress: '0xD20CC1610BB0D0CF0daacb159AB6Cc4787D9e6D4'
         }).then(r => alert('SUCCESS: ' + JSON.stringify(r.data)))
         .catch(e => alert('ERROR: ' + e.message))
       " style="background: #FF9800; color: white; border: none; padding: 10px; border-radius: 3px; cursor: pointer; display: block;">
-        🧪 Test 2: VerifyWallet+StartRun
+        🧪 Test 2: StartRun direct avec wallet
       </button>
       <button onclick="window.functions.httpsCallable('startRun')({}).then(r => alert('SUCCESS: ' + JSON.stringify(r.data))).catch(e => alert('ERROR: ' + e.message))" style="background: #F44336; color: white; border: none; padding: 10px; border-radius: 3px; cursor: pointer; display: block;">
         🧪 Test 3: StartRun seul (devrait échouer)
@@ -109,8 +103,8 @@
     }
 
     // Globales attendues par Unity (extern)
-    window.JS_StartRun = function(objectName, callback, errCallback) {
-      console.log('🎯 [JS_StartRun] CALLED from Unity', { objectName, callback, errCallback });
+    window.JS_StartRun = function(walletAddress, objectName, callback, errCallback) {
+      console.log('🎯 [JS_StartRun] CALLED from Unity', { walletAddress, objectName, callback, errCallback });
       
       // Vérifier l'état d'auth avant d'appeler startRun
       const currentUser = firebase.auth().currentUser;
@@ -124,20 +118,11 @@
       
       _safe(async () => {
         try {
-          if (currentUser) {
-            // FORCER le refresh du token pour obtenir les custom claims à jour
-            console.log('� [JS_StartRun] Forcing token refresh to get updated custom claims...');
-            await currentUser.getIdToken(true); // true = force refresh
-            
-            const idTokenResult = await currentUser.getIdTokenResult();
-            console.log('🔍 [JS_StartRun] Custom claims after refresh:', idTokenResult.claims);
-            console.log('🔍 [JS_StartRun] walletAddress claim after refresh:', idTokenResult.claims.walletAddress);
-          }
-          
-          console.log('🚀 [JS_StartRun] Calling startRun cloud function...');
+          console.log('🚀 [JS_StartRun] Calling startRun cloud function with walletAddress...');
           console.time('⏱️ [JS_StartRun] Cloud function duration');
           
-          const data = await _callCallable('startRun', {});
+          // Passer le walletAddress comme paramètre - pas besoin d'attendre les custom claims!
+          const data = await _callCallable('startRun', { walletAddress });
           
           console.timeEnd('⏱️ [JS_StartRun] Cloud function duration');
           console.log('✅ [JS_StartRun] Success:', data);
@@ -154,7 +139,7 @@
           if (error.code === 'deadline-exceeded') {
             errorMsg = 'StartRun timeout - Firebase functions too slow';
           } else if (error.code === 'failed-precondition') {
-            errorMsg = 'Wallet verification not propagated yet - try again';
+            errorMsg = 'Wallet verification not found in database - try verifying again';
           } else if (error.message) {
             errorMsg = error.message;
           }
