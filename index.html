@@ -175,6 +175,64 @@
 
     // FONCTION POUR SOUMETTRE SCORE AVEC TOKEN DE SESSION (version JS_SubmitScore pour compatibilité)
     window.JS_SubmitScore = window.SubmitScore;
+
+    // 🗑️ OBSOLÈTE : Anciennes fonctions pour compatibilité Unity (ne font rien)
+    window.JS_StartRun = function(walletAddress, gameObjectName, callbackMethod, errorCallback) {
+      console.log('⚠️ [JS_StartRun] OBSOLÈTE - Auto-start JWT activé');
+      // Ne pas appeler le callback pour éviter les erreurs
+    };
+
+    window.JS_SubmitRun = function(runId, runToken, finalScore, coins, clientElapsedMs, gameVersion, gameObjectName, callbackMethod, errorCallback) {
+      console.log('⚠️ [JS_SubmitRun] OBSOLÈTE - SubmitScore JWT utilisé à la place');
+      // Ne pas appeler le callback pour éviter les erreurs
+    };
+
+    window.JS_VerifyWallet = function(wallet, message, signature, gameVersion, gameObjectName, callbackMethod, errorCallback) {
+      console.log('⚠️ [JS_VerifyWallet] OBSOLÈTE - JS_GetSessionToken utilisé à la place');
+      // Ne pas appeler le callback pour éviter les erreurs
+    };
+
+    // DEBUG: Fonction pour vérifier l'état des tokens
+    window.debugTokens = function() {
+      console.log('🔍 [DEBUG] Token state:');
+      console.log('  - juiceBoostSessionToken:', localStorage.getItem('juiceBoostSessionToken')?.substring(0, 20) + '...');
+      console.log('  - tokenWallet:', localStorage.getItem('tokenWallet'));
+      console.log('  - localStorage keys:', Object.keys(localStorage));
+    };
+
+    // DEBUG: Fonction pour forcer la génération d'un token (avec wallet connecté)
+    window.forceGenerateToken = async function() {
+      console.log('🚀 [DEBUG] Force generating token...');
+      
+      // Check if wallet is connected via AppKit
+      if (typeof window.AppKitModal === 'undefined') {
+        console.error('❌ AppKit not available');
+        return;
+      }
+      
+      const account = window.AppKitModal.getAccount();
+      if (!account?.address) {
+        console.error('❌ No wallet connected');
+        return;
+      }
+      
+      const walletAddress = account.address;
+      const message = "JuiceBoost Authentication - " + Date.now();
+      
+      try {
+        console.log('📝 Requesting signature for:', walletAddress);
+        const signature = await window.AppKitModal.signMessage({ message });
+        console.log('✅ Signature obtained:', signature.substring(0, 20) + '...');
+        
+        const token = await window.JS_GetSessionToken(walletAddress, message, signature, null, null);
+        console.log('✅ Token generated successfully!');
+        return token;
+      } catch (e) {
+        console.error('❌ Error generating token:', e);
+      }
+    };
+    
+    console.log('🔧 [DEBUG] Debug functions available: debugTokens(), forceGenerateToken()');
   </script>
 
   <!-- 2) Unity WebGL loader -->
@@ -191,9 +249,9 @@
       const buildUrl = "Build";
       const loaderUrl = `${buildUrl}/de20f721ec32512e2d3005562533ab04.loader.js`;
       const config = {
-        dataUrl: buildUrl + "/a567bb479d479d551221d4016fb5b10f.data",
-        frameworkUrl: buildUrl + "/38a92dd5a5ebc1349fb696f4933ee98d.framework.js",
-        codeUrl: buildUrl + "/f7e4f16ae9632a6d94831a6d092eb82e.wasm",
+        dataUrl: buildUrl + "/96af9517c77037c9f9f0772bea68b156.data",
+        frameworkUrl: buildUrl + "/1679e5f4d341133179a854d97aa58bc0.framework.js",
+        codeUrl: buildUrl + "/c4fb7e9bcec8ea5e8ee70a989ef067a1.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "YourCompany",
         productName: "JuiceBoost",
