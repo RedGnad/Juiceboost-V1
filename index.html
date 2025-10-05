@@ -122,9 +122,17 @@
       const sessionToken = localStorage.getItem('juiceBoostSessionToken');
       const tokenWallet = localStorage.getItem('tokenWallet');
       
+      console.log('🔍 [SubmitScore] Token debug:', {
+        hasToken: !!sessionToken,
+        tokenLength: sessionToken ? sessionToken.length : 0,
+        tokenWallet: tokenWallet,
+        walletMatch: tokenWallet === walletAddress.toLowerCase()
+      });
+      
       if (!sessionToken || tokenWallet !== walletAddress.toLowerCase()) {
         console.error('❌ [SubmitScore] Token manquant ou wallet différent');
         console.error('❌ [SubmitScore] Stored token wallet:', tokenWallet, 'vs submitted:', walletAddress.toLowerCase());
+        console.error('❌ [SubmitScore] Available localStorage keys:', Object.keys(localStorage));
         return;
       }
       
