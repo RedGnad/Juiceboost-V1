@@ -13,25 +13,6 @@
       <div id="unity-progress-bar-full"></div>
     </div>
     <div id="unity-warning"></div>
-    
-    <!-- DIAGNOSTIC: Test direct JavaScript sans Unity -->
-    <div style="position: absolute; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px;">
-      <button onclick="alert('Button clicked! Firebase functions: ' + (window.functions ? 'Ready' : 'NOT ready'))" style="background: #4CAF50; color: white; border: none; padding: 10px; border-radius: 3px; cursor: pointer; margin-bottom: 5px; display: block;">
-        🧪 Test 1: JS Works?
-      </button>
-      <button onclick="
-        // Test avec walletAddress direct - plus besoin de VerifyWallet!
-        window.functions.httpsCallable('startRun')({
-          walletAddress: '0xD20CC1610BB0D0CF0daacb159AB6Cc4787D9e6D4'
-        }).then(r => alert('SUCCESS: ' + JSON.stringify(r.data)))
-        .catch(e => alert('ERROR: ' + e.message))
-      " style="background: #FF9800; color: white; border: none; padding: 10px; border-radius: 3px; cursor: pointer; display: block;">
-        🧪 Test 2: StartRun direct avec wallet
-      </button>
-      <button onclick="window.functions.httpsCallable('startRun')({}).then(r => alert('SUCCESS: ' + JSON.stringify(r.data))).catch(e => alert('ERROR: ' + e.message))" style="background: #F44336; color: white; border: none; padding: 10px; border-radius: 3px; cursor: pointer; display: block;">
-        🧪 Test 3: StartRun seul (devrait échouer)
-      </button>
-    </div>
   </div>
 
   <!-- 1) Firebase Compat (avant Unity) -->
@@ -187,6 +168,91 @@
         }
       });
     };
+
+    // FONCTION POUR OBTENIR UN TOKEN DE SESSION
+    window.JS_GetSessionToken = async function(walletAddress, message, signature) {
+      console.log('🔐 [JS_GetSessionToken] Demande de token pour:', walletAddress);
+      
+      return new Promise(async (resolve, reject) => {
+        try {
+          const response = await fetch('https://us-central1-juiceboost-bddf8.cloudfunctions.net/authenticate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              walletAddress: walletAddress,
+              message: message,
+              signature: signature
+            })
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            console.log('✅ [JS_GetSessionToken] Token obtenu:', data.sessionToken?.substring(0, 20) + '...');
+            // Stocker le token pour les soumissions futures
+            localStorage.setItem('juiceBoostSessionToken', data.sessionToken);
+            localStorage.setItem('tokenWallet', data.walletAddress);
+            resolve(data.sessionToken);
+          } else {
+            console.error('❌ [JS_GetSessionToken] Erreur:', data.error);
+            reject(new Error(data.error));
+          }
+        } catch (e) {
+          console.error('❌ [JS_GetSessionToken] Erreur réseau:', e);
+          reject(e);
+        }
+      });
+    };
+
+    // FONCTION POUR SOUMETTRE SCORE AVEC TOKEN DE SESSION
+    window.JS_SubmitScore = function(walletAddress, score, coins, timeSeconds) {
+      console.log('🎯 [JS_SubmitScore] CALLED from Unity', { walletAddress, score, coins, timeSeconds });
+      
+      const sessionToken = localStorage.getItem('juiceBoostSessionToken');
+      const tokenWallet = localStorage.getItem('tokenWallet');
+      
+      if (!sessionToken || tokenWallet !== walletAddress.toLowerCase()) {
+        console.error('❌ [JS_SubmitScore] Token manquant ou wallet différent');
+        return;
+      }
+      
+      _safe(async () => {
+        try {
+          const response = await fetch('https://us-central1-juiceboost-bddf8.cloudfunctions.net/submitScore', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              walletAddress: walletAddress,
+              score: Number(score),
+              coins: Number(coins),
+              timeSeconds: Number(timeSeconds),
+              sessionToken: sessionToken
+            })
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            console.log('✅ [JS_SubmitScore] Score soumis avec succès:', data);
+          } else {
+            console.error('❌ [JS_SubmitScore] Erreur serveur:', data.error);
+            
+            // Si le token est expiré, le supprimer
+            if (data.error.includes('Token') || data.error.includes('session')) {
+              localStorage.removeItem('juiceBoostSessionToken');
+              localStorage.removeItem('tokenWallet');
+              console.log('🔄 Token expiré supprimé, reconnexion nécessaire');
+            }
+          }
+        } catch (e) {
+          console.error('❌ [JS_SubmitScore] Erreur réseau:', e);
+        }
+      });
+    };
   </script>
 
   <!-- 2) Unity WebGL loader -->
@@ -204,9 +270,9 @@
       const buildUrl = "Build";
       const loaderUrl = `${buildUrl}/de20f721ec32512e2d3005562533ab04.loader.js`;
       const config = {
-        dataUrl: buildUrl + "/7e0e03a3c76b2c03255a2e287e3b5334.data",
-        frameworkUrl: buildUrl + "/f984c0509736c5a9fa47e9cb2c646e0a.framework.js",
-        codeUrl: buildUrl + "/bcba656c0046cf45e7c6a22f3a080c76.wasm",
+        dataUrl: buildUrl + "/c9d2eacd4f1a3950bfb299e6131d043b.data",
+        frameworkUrl: buildUrl + "/2816f8879a127910066a013842eb6894.framework.js",
+        codeUrl: buildUrl + "/0f0e5b3a9b39f2e117f94a1579c62335.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "YourCompany",
         productName: "JuiceBoost",
