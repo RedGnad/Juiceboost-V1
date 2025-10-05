@@ -187,8 +187,46 @@
       script.onload = () => {
         createUnityInstance(canvas, config, p => {
           document.querySelector("#unity-progress-bar-full").style.width = 100 * p + "%";
-        }).then(() => {
+        }).then((unityInstance) => {
           document.querySelector("#unity-loading-bar").style.display = "none";
+          
+          // 🔥 SCRIPT ULTRA-AGRESSIF POUR FORCER LA TAILLE 🔥
+          console.log("🎮 Unity loaded, forcing size aggressively...");
+          
+          function forceSize() {
+            const canvas = document.querySelector("#unity-canvas");
+            const container = document.querySelector("#unity-container");
+            
+            if (canvas) {
+              // Force les attributs HTML
+              canvas.width = 1100;
+              canvas.height = 550;
+              
+              // Force le CSS
+              canvas.style.width = "1100px !important";
+              canvas.style.height = "550px !important";
+              canvas.style.maxWidth = "1100px !important";
+              canvas.style.maxHeight = "550px !important";
+              canvas.style.minWidth = "1100px !important";
+              canvas.style.minHeight = "550px !important";
+            }
+            
+            if (container) {
+              container.style.width = "1100px !important";
+              container.style.height = "550px !important";
+            }
+          }
+          
+          // Force immédiatement
+          forceSize();
+          
+          // Force toutes les 500ms pendant 10 secondes
+          const interval = setInterval(forceSize, 500);
+          setTimeout(() => clearInterval(interval), 10000);
+          
+          // Force à chaque resize de la fenêtre
+          window.addEventListener('resize', forceSize);
+          
         }).catch(alert);
       };
       document.body.appendChild(script);
