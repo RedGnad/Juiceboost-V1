@@ -72,15 +72,6 @@
     // Helpers conversion depuis WebGL String pointers si besoin (Unity gère déjà strings ici)
     function _safe(fn) { try { return fn(); } catch (e) { console.error(e); } }
 
-/*************  ✨ Windsurf Command ⭐  *************/
-    /**
-     * Call a Cloud Function from Unity WebGL.
-     * @param {string} name - Name of the Cloud Function.
-     * @param {object} payload - Payload to pass to the Cloud Function.
-     * @returns {Promise<object>} - Promise resolving to the result of the Cloud Function.
-     * @throws {Error} - If the Cloud Function does not exist or if there is an error calling it.
-     */
-/*******  bd6be45f-d5b3-4402-9dfa-189580957ef1  *******/
     async function _callCallable(name, payload) {
       if (!window.functions) {
         console.warn('[Bridge] functions pas prêtes, tentative d\'initialisation tardive');
@@ -93,15 +84,36 @@
     // Globales attendues par Unity (extern)
     window.JS_StartRun = function(objectName, callback, errCallback) {
       console.log('🎯 [JS_StartRun] CALLED from Unity', { objectName, callback, errCallback });
+      
+      // Vérifier l'état d'auth avant d'appeler startRun
+      const currentUser = firebase.auth().currentUser;
+      console.log('🔍 [JS_StartRun] Current user:', currentUser ? currentUser.uid : 'null');
+      
+      if (currentUser) {
+        currentUser.getIdTokenResult().then(idTokenResult => {
+          console.log('🔍 [JS_StartRun] Custom claims:', idTokenResult.claims);
+          console.log('🔍 [JS_StartRun] walletAddress claim:', idTokenResult.claims.walletAddress);
+        }).catch(e => console.warn('⚠ [JS_StartRun] Could not get token result:', e));
+      }
+      
       if (!window.functions) {
         console.error('❌ [JS_StartRun] Functions not ready! Firebase may not be initialized.');
         if (typeof SendMessage === 'function') SendMessage(objectName, errCallback, 'Functions not ready');
         return;
       }
       _safe(async () => {
-        const data = await _callCallable('startRun', {});
-        console.log('✅ [JS_StartRun] Success:', data);
-        if (typeof SendMessage === 'function') SendMessage(objectName, callback, JSON.stringify(data));
+        try {
+          console.log('🚀 [JS_StartRun] Calling startRun cloud function...');
+          const data = await _callCallable('startRun', {});
+          console.log('✅ [JS_StartRun] Success:', data);
+          if (typeof SendMessage === 'function') SendMessage(objectName, callback, JSON.stringify(data));
+        } catch (error) {
+          console.error('❌ [JS_StartRun] Cloud Function Error:', error);
+          console.error('❌ [JS_StartRun] Error code:', error.code);
+          console.error('❌ [JS_StartRun] Error message:', error.message);
+          console.error('❌ [JS_StartRun] Error details:', error.details);
+          if (typeof SendMessage === 'function') SendMessage(objectName, errCallback, error.message || 'StartRun failed');
+        }
       });
     };
 
@@ -160,9 +172,9 @@
       const buildUrl = "Build";
       const loaderUrl = `${buildUrl}/de20f721ec32512e2d3005562533ab04.loader.js`;
       const config = {
-        dataUrl: buildUrl + "/646d3614ab81b26b411e86368e56d3e3.data",
-        frameworkUrl: buildUrl + "/0901abda6772fd21e9956c1e49dcf5f8.framework.js",
-        codeUrl: buildUrl + "/688e4ec7decd39aee8e2891ddbf5278d.wasm",
+        dataUrl: buildUrl + "/28c1c6e6606029bb373332940899e99a.data",
+        frameworkUrl: buildUrl + "/65120a563dac193d220fb5fb55b97191.framework.js",
+        codeUrl: buildUrl + "/da5918165dc75a427a869fec49e6ddbb.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "YourCompany",
         productName: "JuiceBoost",
